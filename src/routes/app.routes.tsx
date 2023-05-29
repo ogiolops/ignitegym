@@ -68,7 +68,7 @@ export function AppRoutes() {
             />
           )
         }}
-      />
+      /> 
       <Screen 
         name='profile'
         component={Profile}

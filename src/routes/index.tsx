@@ -19,6 +19,5 @@ export function Routes(){
         <AppRoutes/>
       </NavigationContainer>
     </Box>
-
   )
 }
