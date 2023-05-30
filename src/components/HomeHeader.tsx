@@ -6,9 +6,8 @@ import { UserPhoto } from "./UserPhoto";
 
 export function HomeHeader(){
   return(
-    <HStack bg='gray.600' pt={16} pb={5} px={8} alignItems='center' >
-
-
+    <HStack bg='gray.600' pt={16} pb={5} px={8} alignItems='center'>
+      
       <UserPhoto
         source={{ uri: 'https://github.com/ogiolops.png' }} 
         alt="Imagem do usuário"
@@ -25,8 +24,6 @@ export function HomeHeader(){
           Giovanni
         </Heading>
       </VStack>
-
-
 
       <TouchableOpacity>
         <Icon 
