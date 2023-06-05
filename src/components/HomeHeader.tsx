@@ -20,7 +20,7 @@ export function HomeHeader(){
           Olá
         </Text>
 
-        <Heading color="gray.100" >
+        <Heading color="gray.100" fontFamily='heading'>
           Giovanni
         </Heading>
       </VStack>

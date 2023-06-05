@@ -21,7 +21,6 @@ export function Profile(){
 
   async function HandleUserPhotorSelect() {
     setPhotoIsLoading(true);
-
     try {
       const photoSelected = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -29,35 +28,27 @@ export function Profile(){
         aspect: [4, 4],
         allowsEditing: true,
       });
-  
       if (photoSelected.canceled){
         return;
       }
-
       if (photoSelected.assets[0].uri) {
 
         const photoInfo = await FileSystem.getInfoAsync(photoSelected.assets[0].uri);
-
-        console.log(photoInfo.exists)
 
         if (photoInfo.exists && (photoInfo.size / 1024 / 1024 > 5)) {
           return toast.show({
             title: 'Essa imagem é muito grande, escolha uma de até 5MG.',
             placement: 'top',
-            bgColor: 'red.500'
+            bgColor: 'red.500',
           });
-          
        }
-
         setUserPhoto(photoSelected.assets[0].uri);
       }
-  
     } catch (error) {
       console.log(error)
     } finally {
       setPhotoIsLoading(false);
     }
-
   }
 
   return(
@@ -101,7 +92,7 @@ export function Profile(){
         </Center>
         
         <VStack px={10}  >
-            <Heading color='gray.200' fontSize='md' mt={8} mb={2} >Alterar senha</Heading>
+            <Heading color='gray.200' fontSize='md' mt={8} mb={2} fontFamily='heading'>Alterar senha</Heading>
 
             <Input 
               bg='gray.600'
