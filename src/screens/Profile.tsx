@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Center, ScrollView, VStack, Skeleton, Text, Heading, useToast } from 'native-base';
 import { Controller, useForm } from 'react-hook-form';
-
+import { yupResolver } from '@hookform/resolvers/yup'
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import * as yup from 'yup';
 
+import defaultUserPhoto from '@assets/userPhotoDefault.png';
 
 import { ScreenHeader } from '@components/ScreenHeader';
 import { UserPhoto } from '@components/UserPhoto';
 import { Input } from '@components/Input';
 import { Button } from '@components/Button';
 import { useAuth } from '@hooks/useAuth';
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
 
 
 const PHOTO_SIZE = 33;
@@ -24,17 +28,34 @@ type FormDataProps = {
   confirm_password: string;
 }
 
+const profileSchema = yup.object({
+  name: yup.string().required('Informe o nome.'),
+  password: yup.string().min(6, 'A senha deve conter pelo menos 6 digítos').nullable().transform((value) => !!value ? value : null),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform((value) => !!value ? value : null)
+    .oneOf([yup.ref('password'), null], 'As senhas não conferem.')
+    .when('password', {
+      is: (Field: any) => Field,
+      then: (schema) =>
+			schema.nullable().required('Informe a confirmação da senha.'),
+    })
+});
+
 export function Profile(){
+  const [isUpdating, setisUpdating] = useState(false);
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
-  const [userPhoto, setUserPhoto] = useState('http://github.com/ogiolops.png');
 
   const toast = useToast();
-  const { user } = useAuth();
-  const { control, handleSubmit } = useForm<FormDataProps>({
+  const { user, updateUserProfile } = useAuth();
+
+  const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     defaultValues:{
       name: user.name,
       email: user.email,
     },
+    resolver: yupResolver(profileSchema)
   });
 
 
@@ -61,7 +82,33 @@ export function Profile(){
             bgColor: 'red.500',
           });
        }
-        setUserPhoto(photoSelected.assets[0].uri);
+       
+       const fileExtension = photoSelected.assets[0].uri.split('.').pop();
+
+       const photoFile = {
+         name: `${user.name}.${fileExtension}`.toLowerCase(),
+         uri: photoSelected.assets[0].uri,
+         type: `${photoSelected.assets[0].type}/${fileExtension}`
+       } as any;
+
+       const userPhotoUploadForm = new FormData();
+       userPhotoUploadForm.append('avatar', photoFile)
+
+       const avatarUpdatedResponse =  await api.patch('/users/avatar', userPhotoUploadForm, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+       });
+
+       const userUpdated = user;
+       userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+
+       toast.show({
+        title: 'Foto atualizada!',
+        placement: 'top',
+        bgColor: 'green.500'
+       });
+
       }
     } catch (error) {
       console.log(error)
@@ -71,7 +118,32 @@ export function Profile(){
   }
 
   async function handleProfileUpdate(data: FormDataProps) {
-    console.log(data)
+    try {
+      setisUpdating(true);
+
+      const userUpdated = user;
+      userUpdated.name = data.name;
+
+      await api.put('/users', data)
+
+      await updateUserProfile(userUpdated)
+      toast.show({
+        title: 'Perfil atualizado com sucesso!',
+        placement: 'top',
+        bgColor: 'green.500'
+      })
+    } catch (error) {
+      const isAppError = error instanceof  AppError;
+      const title = isAppError ? error.message : 'Não foi possível atualizar dados. Tente novamente mais tarde.'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500'
+      })
+    } finally {
+      setisUpdating(false);
+    }
   }
 
   return(
@@ -93,7 +165,7 @@ export function Profile(){
             />
             :
             <UserPhoto 
-              source={{ uri: userPhoto }}
+              source={user.avatar ? {uri: `${api.defaults.baseURL}/avatar/${user.avatar}`} : defaultUserPhoto } 
               alt='foto do usuário'
               size={PHOTO_SIZE}
             />
@@ -112,6 +184,7 @@ export function Profile(){
                 bg='gray.600'
                 onChangeText={onChange}
                 value={value}
+                errorMessage={errors.name?.message}
               />
             )}
           />
@@ -157,6 +230,7 @@ export function Profile(){
                   placeholder='Nova senha'
                   secureTextEntry
                   onChangeText={onChange}
+                  errorMessage={errors.password?.message}
                 />
               )}
             />
@@ -170,6 +244,7 @@ export function Profile(){
                   placeholder='Confirme a nova senha'
                   secureTextEntry
                   onChangeText={onChange}
+                  errorMessage={errors.confirm_password?.message}
                 />
               )}
             />
@@ -178,6 +253,7 @@ export function Profile(){
               title='Atualizar'
               mt={4}
               onPress={handleSubmit(handleProfileUpdate)}
+              isLoading={isUpdating}
             />
         </VStack>
 
