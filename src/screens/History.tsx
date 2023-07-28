@@ -8,6 +8,7 @@ import { api } from '@services/api';
 
 import { ScreenHeader } from '@components/ScreenHeader';
 import { HistoryCard } from '@components/HistoryCard';
+import { Loading } from '@components/Loading';
 
 export function History(){
 
@@ -45,6 +46,10 @@ export function History(){
         title="Histórico de Exercícios"
       />
 
+      {
+
+      isLoading ? <Loading/> :
+
       <SectionList
         sections={exercises}
         keyExtractor={item => item.id}
@@ -69,6 +74,7 @@ export function History(){
         )}
         showsVerticalScrollIndicator={false}
       />
+      }
 
     </VStack>
   );
